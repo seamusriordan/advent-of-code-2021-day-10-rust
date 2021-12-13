@@ -1,7 +1,7 @@
 #[cfg(test)]
 
 mod tests {
-    use crate::{RouteMachine, RouteScorer};
+    use crate::{Corrupt, RouteMachine, RouteScorer};
 
     #[test]
     fn line_one_example() {
@@ -18,7 +18,7 @@ mod tests {
 
         let result = RouteMachine::new().process_string(input);
 
-        assert_eq!(Err('{'), result);
+        assert_eq!(Err(Corrupt('{')), result);
     }
 
     #[test]
