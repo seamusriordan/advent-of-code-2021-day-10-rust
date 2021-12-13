@@ -2,6 +2,7 @@
 
 mod tests {
     use crate::{Corrupt, RouteMachine, RouteScorer};
+    use crate::Problem::Incomplete;
 
     #[test]
     fn line_one_example() {
@@ -9,7 +10,7 @@ mod tests {
 
         let result = RouteMachine::new().process_string(input);
 
-        assert_eq!(Ok(true), result);
+        assert_eq!(Err(Incomplete(String::from("}}]])})]"))), result);
     }
 
     #[test]
@@ -36,6 +37,6 @@ mod tests {
 
         let result = RouteScorer::new().process(input);
 
-        assert_eq!(26397, result);
+        assert_eq!(288957, result);
     }
 }

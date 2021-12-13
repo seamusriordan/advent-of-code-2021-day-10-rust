@@ -1,12 +1,12 @@
 use std::str::Lines;
-use crate::Problem::Corrupt;
+use crate::Problem::{Corrupt, Incomplete};
 
 mod tests;
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum Problem {
     Corrupt(char),
-    Incomplete(&'static str)
+    Incomplete(String)
 }
 
 pub struct RouteMachine {
@@ -20,7 +20,7 @@ impl RouteMachine {
         };
     }
 
-    pub fn process_string(mut self, s: &str) -> Result<bool, Problem> {
+    pub fn process_string(&mut self, s: &str) -> Result<bool, Problem> {
         for c in s.chars() {
             match self.process_char(&c) {
                 Err(e) => return Err(e),
@@ -28,7 +28,18 @@ impl RouteMachine {
             }
         }
 
-        Ok(true)
+        let mut remaining: String = String::from("");
+        for c in self.state.iter().rev() {
+            match c {
+                '(' => remaining.push(')'),
+                '[' => remaining.push(']'),
+                '{' => remaining.push('}'),
+                '<' => remaining.push('>'),
+                _ => {}
+            }
+        }
+
+        Err(Incomplete(remaining))
     }
 
     pub fn process_char(&mut self, c: &char) -> Result<bool, Problem> {
@@ -72,29 +83,46 @@ impl RouteMachine {
 }
 
 pub struct RouteScorer {
-    score: i32,
+    corrupt_score: u64,
+    incomplete_scores: Vec<u64>
 }
 
 impl RouteScorer {
     pub fn new() -> RouteScorer {
         return RouteScorer {
-            score: 0
+            corrupt_score: 0,
+            incomplete_scores: vec![]
         };
     }
 
-    pub fn process(&mut self, lines: Lines) -> i32 {
+    pub fn process(&mut self, lines: Lines) -> u64 {
         for line in lines {
-            let route_machine = RouteMachine::new();
+            let mut route_machine = RouteMachine::new();
             match route_machine.process_string(line) {
-                Err(Corrupt('(')) => self.score += 3,
-                Err(Corrupt('[')) => self.score += 57,
-                Err(Corrupt('{')) => self.score += 1197,
-                Err(Corrupt('<')) => self.score += 25137,
+                Err(Corrupt('(')) => self.corrupt_score += 3,
+                Err(Corrupt('[')) => self.corrupt_score += 57,
+                Err(Corrupt('{')) => self.corrupt_score += 1197,
+                Err(Corrupt('<')) => self.corrupt_score += 25137,
+                Err(Incomplete(s)) => {
+                    let mut score = 0;
+                    for c in s.chars() {
+                        score *= 5;
+                        score += match c {
+                            ')' => 1,
+                            ']' => 2,
+                            '}' => 3,
+                            '>' => 4,
+                            _ => 0
+                        }
+                    }
+                    self.incomplete_scores.push(score)
+                }
                 _ => {}
             }
         }
 
-        self.score
+        self.incomplete_scores.sort();
+        self.incomplete_scores[self.incomplete_scores.len()/2]
     }
 }
 
